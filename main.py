@@ -1,10 +1,11 @@
+from __future__ import division
+
 import conf
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import ephem
 import time
 import re
-
 
 handler = logging.FileHandler(conf.LOG_PATH, 'a', encoding='UTF-8')
 handler.setFormatter(
@@ -15,6 +16,33 @@ log.setLevel(conf.LOG_LEVEL)
 
 default_response = 'Попробуй другую команду.'
 
+math_operators = {
+    '+': '__add__',
+    '-': '__sub__',
+    '*': '__mul__',
+    '/': '__truediv__'
+}
+
+def math_count(input_text: str):
+    re_main_math = '^([0-9,\-]{1,})([+,\-,/,*]{1})([0-9,\-]{1,})=$'
+    data_found_list = re.findall(re_main_math, input_text)
+    if not isinstance(data_found_list, list) or len(data_found_list) != 1:
+        return False
+    elements = re.search(re_main_math, input_text)
+    first_number = int(elements.group(1))
+    operator = math_operators.get(elements.group(2))
+    second_number = int(elements.group(3))
+    try:
+        result = eval(f'first_number.{operator}(second_number)')
+    except SyntaxError:
+        return False
+    except ZeroDivisionError:
+        return 'Делить на ноль недопустимо в этой Вселенной.'
+    if not isinstance(result, int) and not isinstance(result, float):
+        return False
+    return result
+
+
 def start_message(bot, update):
     user_text = update.message.text
     log.info(f'user_text={user_text}')
@@ -23,8 +51,13 @@ def start_message(bot, update):
     update.message.reply_text(reply_text)
 
 def chat(bot, update):
-    log.info(f'user_text={update.message.text}')
-    update.message.reply_text(default_response)
+    input_text = update.message.text.strip()
+    log.info(f'user_text={input_text}')
+    response = math_count(input_text)
+    if response is not False:
+        update.message.reply_text(response)
+    else:
+        update.message.reply_text(default_response)
 
 def space_talks(bot, update):
     log.info(f'user_text={update.message.text}')
