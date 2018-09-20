@@ -3,6 +3,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import ephem
 import time
+import re
 
 
 handler = logging.FileHandler(conf.LOG_PATH, 'a', encoding='UTF-8')
@@ -42,12 +43,28 @@ def space_talks(bot, update):
             update.message.reply_text(
                 'Сегодня она будет в созвездии {}, {}'.format(constellation_name[0], constellation_name[1]))
 
+def words_count(bot, update):
+    input_data = update.message.text
+    log.info(f'user_text={input_data}')
+    data_found_list = re.findall('"([a-zA-Zа-яА-Я\s-]{1,})"', input_data)
+    if len(data_found_list) == 0:
+        update.message.reply_text('В введенной строке нет слов в двойных кавычках.')
+    else:
+        print(len(data_found_list))
+        reply = ''
+        for data_found in data_found_list:
+            data_len = len(data_found.strip().split())
+            #  @ToDo: добавить склонение слова "слов"
+            reply += f'Во фразе "{data_found}" {data_len} слов.\n'
+        update.message.reply_text(reply)
+
 if __name__ == '__main__':
     log.info('Bot start')
     bot = Updater(conf.BOT_PRIVATE_KEY, request_kwargs=conf.PROXY)
     dp = bot.dispatcher
     dp.add_handler(CommandHandler('start', start_message))
     dp.add_handler(CommandHandler('planet', space_talks))
+    dp.add_handler(CommandHandler('wordcount', words_count))
     dp.add_handler(MessageHandler(Filters.text, chat))
     bot.start_polling()
     bot.idle()
