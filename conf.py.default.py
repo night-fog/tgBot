@@ -12,3 +12,4 @@ PROXY = {
 }
 LOG_PATH = 'bot.log'
 LOG_LEVEL = logging.INFO
+CITIES_FILE_PATH = '{}/res/cities.txt'
