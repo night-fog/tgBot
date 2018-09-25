@@ -5,15 +5,23 @@ from os.path import isfile
 class CitiesGame():
     __cities = dict()
     __filename = None
-    __letter = None
+    __last_letter = None
     __used = list()
+
+    __dead_end_letters = [
+        'ё',
+        'й',
+        'ъ',
+        'ы',
+        'ь'
+    ]
 
     def __init__(self, filename):
         self.__filename = filename
         self.read_cities()
 
-    def get_letter(self):
-        return self.__letter
+    def get_last_letter(self):
+        return self.__last_letter
 
 
     def has_city(self, city: str):
@@ -32,17 +40,23 @@ class CitiesGame():
         else:
             return False
 
-    def get(self, letter: str):
-        #  @ToDo: бывают буквы, на которые не могут начинаться слова
+    def last_letter(self, city: str):
+        for i in range(len(city)-1, 0, -1):
+            last_letter = city[i].lower()
+            if last_letter not in self.__dead_end_letters:
+                return last_letter
+        return False
+
+    def get(self, city: str):
         if self.__cities is None:
             return None
 
-        letter = letter[0].lower()
+        letter = self.last_letter(city)
         if letter not in self.__cities.keys():
             return None
         result_city = random.choice(self.__cities[letter])
         self.delete(result_city)
-        self.__letter = result_city[-1]
+        self.__last_letter = self.last_letter(result_city)
         return result_city
 
     def delete(self, city: str):

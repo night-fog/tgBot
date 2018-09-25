@@ -2,7 +2,6 @@ from __future__ import division
 
 import conf
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
-from telegram import ReplyKeyboardMarkup
 import logging
 import ephem
 import time
@@ -63,6 +62,7 @@ class Bot:
 
     def get_input(self, update, function_name=None, return_command_name=False):
         if not function_name:
+            #  @FixMe: не выводит имя метода, из которого вызвана функция
             function_name = inspect.stack()[0][3]
         self.log(update.message.text, function_name + ':in')
         if update.message.text[0] == '/':
@@ -79,6 +79,7 @@ class Bot:
 
     def send_reply(self, message, update, function_name=None):
         if not function_name:
+            #  @FixMe: не выводит имя метода, из которого вызвана функция
             function_name = inspect.stack()[0][3]
         self.log(message, function_name + ':out')
         update.message.reply_text(message)
@@ -86,6 +87,7 @@ class Bot:
 
     def send_wrong_command_reply(self, update, function_name=None):
         if not function_name:
+            #  @FixMe: не выводит имя метода, из которого вызвана функция
             function_name = inspect.stack()[0][3]
         message = f'"{update.message.text}" - Тут что-то не так. Не надо так.'
         self.send_reply(message, update, function_name)
@@ -214,7 +216,7 @@ class Bot:
             self.send_reply('Введи, лучше, русский город, пожалуйста.', update)
             return False
 
-        first_letter = self.__cities.get_letter()
+        first_letter = self.__cities.get_last_letter()
         if first_letter and city[0].lower() != first_letter:
             reply_text = f'Город должен начинаться на "{first_letter}"'
             self.send_reply(reply_text, update)
@@ -231,13 +233,13 @@ class Bot:
             return False
 
         self.__cities.delete(city)
-        resp = self.__cities.get(city[-1])
+        resp = self.__cities.get(city)
         if resp is None:
-            reply_text = f'Здорово!\nНе помню больше русских городов на "{city[-1]}".\nРоботы проиграли, но только в этот раз.'
+            reply_text = f'Здорово!\nНе помню больше русских городов на "{self.__cities.last_letter(city)}".\nРоботы проиграли, но только в этот раз.'
             self.send_reply(reply_text, update)
             self.__cities_game_reset()
             return True
 
-        reply_text = f'{resp}, тебе на {resp[-1]}.'
+        reply_text = f'{resp}, тебе на {self.__cities.get_last_letter()}.'
         self.send_reply(reply_text, update)
         return True
