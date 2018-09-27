@@ -11,14 +11,14 @@ from os.path import dirname, realpath
 import inspect
 
 class Bot:
-    __log = logging.getLogger()
-    __bot = Updater(conf.BOT_PRIVATE_KEY, request_kwargs=conf.PROXY)
-    __db = None
-    __mode = None
-    __cities = None
+    _log = logging.getLogger()
+    _bot = Updater(conf.BOT_PRIVATE_KEY, request_kwargs=conf.PROXY)
+    _db = None
+    _mode = None
+    _cities = None
 
     default_response = 'Попробуй другую команду.\n Напиши /start, если запутался.'
-    __math_operators = {
+    _math_operators = {
         '+': '__add__',
         '-': '__sub__',
         '*': '__mul__',
@@ -33,26 +33,26 @@ class Bot:
         self.__start()
 
     def __start(self):
-        self.__init_log()
-        self.__init_dispatcher()
-        self.__init_cities_game()
-        self.__bot.start_polling()
-        self.__bot.idle()
+        self._init_log()
+        self._init_dispatcher()
+        self._init_cities_game()
+        self._bot.start_polling()
+        self._bot.idle()
 
-    def __init_log(self):
+    def _init_log(self):
         handler = logging.FileHandler(conf.LOG_PATH, 'a', encoding='UTF-8')
         handler.setFormatter(
             logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-        self.__log.addHandler(handler)
-        self.__log.setLevel(conf.LOG_LEVEL)
+        self._log.addHandler(handler)
+        self._log.setLevel(conf.LOG_LEVEL)
 
     def log(self, message, function_name=None):
         if not function_name:
             function_name = inspect.stack()[0][3]
-        self.__log.info('{}:{}'.format(function_name, str(message).replace('\n', '\\n')))
+        self._log.info('{}:{}'.format(function_name, str(message).replace('\n', '\\n')))
 
-    def __init_dispatcher(self):
-        self.__dp = self.__bot.dispatcher
+    def _init_dispatcher(self):
+        self.__dp = self._bot.dispatcher
         self.__dp.add_handler(CommandHandler('start', self.cmd_start))
         self.__dp.add_handler(CommandHandler('planet', self.cmd_planet))
         self.__dp.add_handler(CommandHandler('wordcount', self.cmd_wordcount))
@@ -94,13 +94,13 @@ class Bot:
 
     def set_mode(self, mode=None):
         if mode in self.__mode_list:
-            self.__mode = mode
+            self._mode = mode
             return True
         else:
             return False
 
     def get_mode(self):
-        return self.__mode
+        return self._mode
 
     def main_tread(self, bot, update):
         input_text = self.get_input(update)
@@ -178,7 +178,7 @@ class Bot:
             return False
         elements = re.search(re_main_math, input_text)
         first_number = int(elements.group(1))
-        operator = self.__math_operators.get(elements.group(2))
+        operator = self._math_operators.get(elements.group(2))
         second_number = int(elements.group(3))
         try:
             result = eval(f'first_number.{operator}(second_number)')
@@ -202,13 +202,13 @@ class Bot:
         self.set_mode('goroda')
         return self.main_tread(bot, update)
 
-    def __init_cities_game(self):
-        if self.__cities is None:
+    def _init_cities_game(self):
+        if self._cities is None:
             path = dirname(realpath(__file__))
-            self.__cities = CitiesGame(conf.CITIES_FILE_PATH.format(path))
+            self._cities = CitiesGame(conf.CITIES_FILE_PATH.format(path))
 
-    def __cities_game_reset(self):
-        self.__cities.read_cities()
+    def _cities_game_reset(self):
+        self._cities.read_cities()
         self.set_mode(None)
 
     def cities_game(self, city, update):
@@ -216,30 +216,30 @@ class Bot:
             self.send_reply('Введи, лучше, русский город, пожалуйста.', update)
             return False
 
-        first_letter = self.__cities.get_last_letter()
+        first_letter = self._cities.get_last_letter()
         if first_letter and city[0].lower() != first_letter:
             reply_text = f'Город должен начинаться на "{first_letter}"'
             self.send_reply(reply_text, update)
             return False
 
-        if self.__cities.is_used(city):
+        if self._cities.is_used(city):
             reply_text = 'Такой город уже был!'
             self.send_reply(reply_text, update)
             return False
 
-        if not self.__cities.has_city(city):
+        if not self._cities.has_city(city):
             reply_text = 'Не знаю такого русского города. Давай, подумай еще, ты сможешь.'
             self.send_reply(reply_text, update)
             return False
 
-        self.__cities.delete(city)
-        resp = self.__cities.get(city)
+        self._cities.delete(city)
+        resp = self._cities.get(city)
         if resp is None:
-            reply_text = f'Здорово!\nНе помню больше русских городов на "{self.__cities.last_letter(city)}".\nРоботы проиграли, но только в этот раз.'
+            reply_text = f'Здорово!\nНе помню больше русских городов на "{self._cities.last_letter(city)}".\nРоботы проиграли, но только в этот раз.'
             self.send_reply(reply_text, update)
-            self.__cities_game_reset()
+            self._cities_game_reset()
             return True
 
-        reply_text = f'{resp}, тебе на {self.__cities.get_last_letter()}.'
+        reply_text = f'{resp}, тебе на {self._cities.get_last_letter()}.'
         self.send_reply(reply_text, update)
         return True
