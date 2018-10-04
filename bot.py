@@ -7,8 +7,12 @@ import ephem
 import time
 import re
 from cities_game import CitiesGame
-from os.path import dirname, realpath
+from os.path import dirname, realpath, isfile, isdir, join
+from os import listdir
 import inspect
+from glob import glob
+from random import choice
+
 
 class Bot:
     _log = logging.getLogger()
@@ -58,6 +62,7 @@ class Bot:
         self.__dp.add_handler(CommandHandler('wordcount', self.cmd_wordcount))
         self.__dp.add_handler(CommandHandler('math', self.cmd_math))
         self.__dp.add_handler(CommandHandler('goroda', self.cmd_goroda))
+        self.__dp.add_handler(CommandHandler('cats', self.cmd_cats))
         self.__dp.add_handler(MessageHandler(Filters.text, self.main_tread))
 
     def get_input(self, update, function_name=None, return_command_name=False):
@@ -83,6 +88,19 @@ class Bot:
             function_name = inspect.stack()[0][3]
         self.log(message, function_name + ':out')
         update.message.reply_text(message)
+        return True
+
+    def send_photo(self, photo_path, bot, update, function_name=None):
+        if not isfile(photo_path):
+            self.log(f'file "{photo_path}" doesn\'t exist',
+                     function_name + ':outImg')
+            return False
+        if not function_name:
+            #  @FixMe: не выводит имя метода, из которого вызвана функция
+            function_name = inspect.stack()[0][3]
+        self.log(photo_path, function_name + ':outImg')
+        bot.send_photo(chat_id=update.message.chat.id,
+                       photo=open(photo_path, 'rb'))
         return True
 
     def send_wrong_command_reply(self, update, function_name=None):
@@ -202,6 +220,31 @@ class Bot:
         self.set_mode('goroda')
         return self.main_tread(bot, update)
 
+    def get_images_list(self, folder, prefix=None, file_format=['jpg', 'jpeg', 'png', 'gif']):
+        if not isdir(folder):
+            return None
+        files = listdir(folder)
+        image_files_paths = list()
+        for file in files:
+            file_split = file.split('.')
+            if len(file_split) > 1 and file_split[-1] in file_format:
+                if prefix:
+                    if file[0:len(prefix)] == prefix:
+                        image_files_paths.append(join(folder, file))
+                else:
+                    image_files_paths.append(join(folder, file))
+        return image_files_paths
+
+    def cmd_cats(self, bot, update):
+        self.set_mode(None)
+        cats_list = self.get_images_list('res/images', 'cat')
+        print(f'cats_list={cats_list}')
+        if not len(cats_list):
+            self.send_reply('Ни одной кошечки не завалялось, извини.', update)
+        else:
+            self.send_photo(choice(cats_list), bot, update)
+
+
     def _init_cities_game(self):
         if self._cities is None:
             path = dirname(realpath(__file__))
@@ -213,7 +256,7 @@ class Bot:
 
     def cities_game(self, city, update):
         if not re.match('^[а-я\s-]{1,}$', city.strip().lower()):
-            self.send_reply('Введи, лучше, русский город, пожалуйста.', update)
+            self.send_reply('Введи, лучше русский город, пожалуйста.', update)
             return False
 
         first_letter = self._cities.get_last_letter()
