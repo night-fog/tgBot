@@ -1,17 +1,18 @@
 from __future__ import division
 
-import conf
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
-import ephem
 import time
 import re
-from cities_game import CitiesGame
 from os.path import dirname, realpath, isfile, isdir, join
 from os import listdir
-import inspect
-from glob import glob
 from random import choice
+import inspect
+
+import ephem
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+
+from cities_game import CitiesGame
+import conf
 
 
 class Bot:
